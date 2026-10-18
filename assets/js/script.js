@@ -16,14 +16,38 @@ document.addEventListener('DOMContentLoaded', function () {
     yearEl.textContent = new Date().getFullYear();
   }
 
-  // Contact form (static demo — no backend wired up yet)
+  // Contact form — delivered by FormSubmit (temporary inbox until business email is set up)
   var form = document.getElementById('contact-form');
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var status = document.getElementById('form-status');
+      var button = form.querySelector('button[type="submit"]');
+      var data = Object.fromEntries(new FormData(form));
+      data._subject = 'RoxIntel website inquiry: ' + data.interest;
+      data._template = 'table';
+
+      button.disabled = true;
       status.style.color = '#c9a227';
-      status.textContent = 'Thanks — this form isn\'t connected to an inbox yet. Please email us directly until it is.';
+      status.textContent = 'Sending…';
+
+      fetch('https://formsubmit.co/ajax/rich.galero@yahoo.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(data)
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success !== 'true' && json.success !== true) throw new Error(json.message);
+          form.reset();
+          status.style.color = '#2e7d32';
+          status.textContent = 'Thank you — your message has been sent. We\'ll be in touch shortly.';
+        })
+        .catch(function () {
+          status.style.color = '#c62828';
+          status.textContent = 'Sorry, your message could not be sent. Please try again in a moment.';
+        })
+        .then(function () { button.disabled = false; });
     });
   }
 });
